@@ -24,7 +24,7 @@ declare -A RUN=(
   [diurnal]=1
   [diurnal2]=1
   [flakaliden]=1
-  [seasonal]=1
+  [seasonal]=0
   )
 
 default="*_trimmomatic_1.fq.gz"
@@ -42,7 +42,7 @@ default="../UPSCb-common/pipeline/runSalmon.sh"
 declare -A TOOL=(
   [atlas]=$default
   [diurnal]=$default
-  [diurnal2]="../UPSCb-common/pipeline/runSalmonSE.sh ADD-EXTRA-ARGS-THERE fragment length mean and fragment length sd"
+  [diurnal2]="../UPSCb-common/pipeline/runSalmonSE.sh"
   [flakaliden]=$default
   [seasonal]=$default
 )
@@ -61,6 +61,7 @@ source ../UPSCb-common/src/bash/functions.sh
 
 # variables
 FORCE=0
+SE_defaults="300 25"
 
 # usage
 USAGETXT=\
@@ -97,6 +98,7 @@ for DSET in "${!DATASET[@]}"; do
       if [ ${PE[$DSET]} -eq 1 ]; then
         fnam=$(basename ${f/_1.fq.gz/})
         REV=$in/$DSET/${fnam}_2.fq.gz
+        SE_defaults=
       else
         fnam=$(basename ${f/.fq.gz/})
       fi
@@ -105,7 +107,7 @@ for DSET in "${!DATASET[@]}"; do
       echo sbatch -A $proj --mail-user=$mail \
         -e $outDir/$fnam.err -o $outDir/$fnam.out -J salmon.$fnam \
         ${TOOL[$DSET]} -b $bind \
-        -i $img $ref $f $REV $outDir
+        -i $img $ref $f $REV $outDir $SE_defaults
     done
   fi
 done
