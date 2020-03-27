@@ -6,7 +6,7 @@ set -eux
 # params
 proj=facility
 mail=nicolas.delhomme@umu.se
-ref=/mnt/picea/storage/reference/Picea-abies/v1.0/indices/salmon/Pabies1.0-all-phase.gff3.CDSandLTR-TE
+ref=/mnt/picea/storage/reference/Picea-abies/v1.0/indices/salmon/Pabies1.0-all-phase.gff3.CDSandLTR-TE_salmon-version-1dot1dot0
 bind=/mnt:/mnt
 img=/mnt/picea/projects/singularity/salmon-1.1.0.simg 
 in=/mnt/picea/projects/spruce/facility/trimmomatic
