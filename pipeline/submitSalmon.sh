@@ -5,12 +5,13 @@ set -eux
 
 # params
 proj=facility
-mail=nicolas.delhomme@umu.se
+mail=aaron.ayllon.benitez@umu.se 
 ref=/mnt/picea/storage/reference/Picea-abies/v1.0/indices/salmon/Pabies1.0-all-phase.gff3.CDSandLTR-TE_salmon-version-1dot1dot0
+#ref=$(realpath ../index/Pabies1.0-all.phase.gff3.CDSandLTR-TE_INDEX)
 bind=/mnt:/mnt
 img=/mnt/picea/projects/singularity/salmon-1.1.0.simg 
-in=/mnt/picea/projects/spruce/facility/trimmomatic
-out=$(realpath ../data/salmon)
+in=$(realpath ../data/trimmomatic)
+out=$(realpath ../data/seidr/salmon)
 
 declare -A DATASET=(
   [atlas]="atlas"
@@ -104,7 +105,7 @@ for DSET in "${!DATASET[@]}"; do
       fi
       
       ## execute
-      echo sbatch -A $proj --mail-user=$mail \
+      sbatch -A $proj --mail-user=$mail \
         -e $outDir/$fnam.err -o $outDir/$fnam.out -J salmon.$fnam \
         ${TOOL[$DSET]} -b $bind \
         -i $img $ref $f $REV $outDir $SE_defaults
