@@ -11,6 +11,7 @@
 suppressPackageStartupMessages({
   library(gplots)
   library(here)
+  library(magrittr)
   library(matrixStats)
   library(pander)
   library(pracma)
@@ -27,13 +28,9 @@ plotRoc <- function(f){
                   col_names = c("TPR","FPR","PR","ALGORITHM"),
                   col_types = cols(.default=col_double(),
                                    ALGORITHM = col_character()),
-                  comment="#")
-  
-  
-  TNR = 1-dat$FPR
-  FNR = 1-dat$TPR
-  balancedAccuracy=(dat$TPR+TNR)/2
-  
+                  comment="#") %>% 
+    mutate(TNR=1-FPR,FNR=1-TPR,balanced_accuracy=(TPR+TNR)/2) %>% 
+    group_by(ALGORITHM) 
   
   vals <- read_lines(f) %>% subset(grepl("#",.))
   lvals <- length(vals)/3
@@ -42,21 +39,20 @@ plotRoc <- function(f){
                  negativeEdges=as.integer(sapply(strsplit(vals[1:lvals],"\t"),"[",3)),
                  AUC=as.double(sub(".* ","",sapply(strsplit(vals[lvals + seq(1,length.out=lvals,by=2)],"\t"),"[",1))),
                  AUPR=as.double(sub(".* ","",sapply(strsplit(vals[lvals + seq(2,length.out=lvals,by=2)],"\t"),"[",1))),
-  )
+  ) 
   
+  dat %<>% group_modify(~mutate(.,
+                             p_edge=tabs[tabs$ALGO==.y[[1]],"positiveEdges",drop=TRUE],
+                             n_edge=tabs[tabs$ALGO==.y[[1]],"negativeEdges",drop=TRUE]
+                             ))
+  dat %<>% mutate(TP=TPR * p_edge,
+                  TN=(1-FPR) * n_edge,
+                  FP=FPR * n_edge,
+                  accuracy=(TP+TN)/(p_edge+n_edge),
+                  PPCR=(TP+FP)/(p_edge+n_edge))
   
-  TNR = 1-dat$FPR
-  FNR = 1-dat$TPR
-  balancedAccuracy=(dat$TPR+TNR)/2
-  Accuracy=(dat$TPR*tabs$positiveEdges+(1-dat$FPR)*tabs$positiveEdges)/(tabs$positiveEdges+tabs$negativeEdges)
-  PPCR=(dat$TPR*tabs$positiveEdges+dat$FPR*tabs$negativeEdges)/(tabs$positiveEdges+tabs$negativeEdges)
-  
-  #aucs <- unlist(dat %>% group_by(ALGORITHM) %>% group_map(.,function(x,...){print(x); round(trapz(x$FP,x$TP),digits=3)}))
-  n<-unique(dat$ALGORITHM)
-  
-  aucs <- unlist(lapply(n, function(x){y <- dat[dat$ALGORITHM==x,]; print(sum(y$FP));return(round(trapz(y$FP,y$TP),digits=3))}))
-
-  names(aucs) <- n
+  aucs <- unlist(dat %>% group_by(ALGORITHM) %>% group_map(~round(trapz(.x$FPR,.x$TPR),digits=3)))
+  names(aucs) <- attr(dat,"groups")[,1,drop=TRUE]
   
   p <- ggplot(dat,aes(x=FPR,y=TPR,col=ALGORITHM,group=ALGORITHM)) +
     geom_line() + 
@@ -76,16 +72,28 @@ plotRoc <- function(f){
     theme_classic()
   
   suppressMessages(suppressWarnings(plot(p2)))
-  sequence=seq(1,length(dat$TPR)/length(n))/(length(dat$TPR)/length(n))
-  p3 <- ggplot(dat %>% mutate(A=Accuracy),
-               aes(x=rep(sequence,13),y=A,col=ALGORITHM,group=ALGORITHM)) +
+  
+  sequence=rep(seq(0,1,length.out=nrow(dat)/nrow(attr(dat,"groups"))),nrow(attr(dat,"groups")))
+  
+  p3 <- ggplot(dat,aes(x=sequence,y=accuracy,col=ALGORITHM,group=ALGORITHM)) +
     geom_line() + 
     scale_x_continuous(name="Normalized rank") + 
     scale_y_continuous(name="Accuracy") +
-    ggtitle(label=paste(sub("\\.roc","",basename(f)), " PR curve"))+
+    ggtitle(label=paste(sub("\\.roc","",basename(f)), " Accuracy curve"))+
     theme_classic()
   
   suppressMessages(suppressWarnings(plot(p3)))
+  
+  p4 <- ggplot(dat,aes(x=sequence,y=PPCR,col=ALGORITHM,group=ALGORITHM)) +
+    geom_line() + 
+    scale_x_continuous(name="Normalized rank") + 
+    scale_y_continuous(name="Predictive Positive Condition Rate") +
+    ggtitle(label=paste(sub("\\.roc","",basename(f)), " PPCR curve"))+
+    theme_classic()
+  
+  suppressMessages(suppressWarnings(plot(p4)))
+  
+  
   return(list(stats=tabs,auc=aucs))
 }
 
