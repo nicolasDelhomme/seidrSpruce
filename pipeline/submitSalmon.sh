@@ -21,10 +21,10 @@ declare -A DATASET=(
   [seasonal]="seasonal")
   
 declare -A RUN=(
-  [atlas]=1
+  [atlas]=0
   [diurnal]=1
-  [diurnal2]=1
-  [flakaliden]=1
+  [diurnal2]=0
+  [flakaliden]=0
   [seasonal]=0
   )
 
@@ -105,7 +105,7 @@ for DSET in "${!DATASET[@]}"; do
       fi
       
       ## execute
-      sbatch -A $proj --mail-user=$mail \
+      echo sbatch -A $proj --mail-user=$mail \
         -e $outDir/$fnam.err -o $outDir/$fnam.out -J salmon.$fnam \
         ${TOOL[$DSET]} -b $bind \
         -i $img $ref $f $REV $outDir $SE_defaults
