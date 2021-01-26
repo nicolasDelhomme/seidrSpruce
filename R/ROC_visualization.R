@@ -130,6 +130,7 @@ pander(sts)
 #' Report all AUCs
 aucs <- cbind(sapply(resb,"[[","auc"),aggregated=res$auc)
 
+aucs<-aucs[c(rownames(aucs)[rownames(aucs)!="irp"],"irp"),]
 pander(aucs)
 
 #' ## Heatmaps
